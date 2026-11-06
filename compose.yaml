@@ -1,0 +1,27 @@
+services:
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
+    volumes: [redis-data:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+  abacus-1:
+    build: .
+    environment: {REDIS_URL: "redis://redis:6379/0", ABACUS_SUM_KEY: "abacus:sum"}
+    depends_on:
+      redis: {condition: service_healthy}
+    ports: ["8001:8000"]
+    restart: unless-stopped
+  abacus-2:
+    build: .
+    environment: {REDIS_URL: "redis://redis:6379/0", ABACUS_SUM_KEY: "abacus:sum"}
+    depends_on:
+      redis: {condition: service_healthy}
+    ports: ["8002:8000"]
+    restart: unless-stopped
+volumes:
+  redis-data:
